@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+    <style>
+        body{
+            background-image: url(portada.jpg);
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
+    </style>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Inventario</title>
+    <!-- Importación de Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Importación de Vue.js -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<body>
+    <div id="app" class="container mt-5">
+        <br><br><br>
+        <h1 class="main-title text-center mb-4"></h1>
+        <nav class="nav-links mb-4">
+            <ul class="nav nav-pills justify-content-center">
+                <li class="nav-item">
+                    <a class="nav-link" href="#" @click="view = 'home'">Inicio</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" @click="view = 'add'">Agregar Producto</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" @click="view = 'list'">Ver Productos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" @click="view = 'sales'">Registrar Venta</a>
+                </li>
+            </ul>
+        </nav>
+        <div v-if="view === 'home'">
+            <center>
+                <br><br><br><br><br><br><br><br><br>
+                
+            <h2>BIENVENIDO A MI_INVENTARIO</h2>
+            <P>Tu sistema de gestion de productos</P>
+            
+        </center>
+        </div>
+        <div v-if="view === 'add'">
+            <h2>Agregar Producto</h2>
+            <form @submit.prevent="addProduct">
+                <div class="form-group">
+                    <label for="name">Nombre:</label>
+                    <input type="text" id="name" v-model="newProduct.name" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="price">Precio:</label>
+                    <input type="number" id="price" v-model="newProduct.price" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="quantity">Cantidad:</label>
+                    <input type="number" id="quantity" v-model="newProduct.quantity" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-primary">Agregar</button>
+            </form>
+        </div>
+        <div v-if="view === 'list'">
+            <h2>Lista de Productos</h2>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Precio</th>
+                        <th>Cantidad</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="product in products" :key="product.id">
+                        <td>{{ product.id }}</td>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.price }}</td>
+                        <td>{{ product.quantity }}</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" @click="editProduct(product)">Anexar</button>
+                            <button class="btn btn-danger btn-sm" @click="deleteProduct(product.id)">Eliminar</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div v-if="view === 'edit'">
+            <h2>Editar Producto</h2>
+            <form @submit.prevent="updateProduct">
+                <div class="form-group">
+                    <label for="edit-name">Nombre:</label>
+                    <input type="text" id="edit-name" v-model="currentProduct.name" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="edit-price">Precio:</label>
+                    <input type="number" id="edit-price" v-model="currentProduct.price" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="edit-quantity">Cantidad:</label>
+                    <input type="number" id="edit-quantity" v-model="currentProduct.quantity" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-primary">Actualizar</button>
+            </form>
+        </div>
+        <div v-if="view === 'sales'">
+            <h2>Registrar Venta</h2>
+            <form @submit.prevent="registerSale">
+                <div class="form-group">
+                    <label for="product-id">ID del Producto:</label>
+                    <input type="number" id="product-id" v-model.number="sale.productId" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="quantity-sold">Cantidad Vendida:</label>
+                    <input type="number" id="quantity-sold" v-model.number="sale.quantity" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-primary">Registrar Venta</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                view: 'home',
+                newProduct: { name: '', price: 0, quantity: 0 },
+                products: JSON.parse(localStorage.getItem('products')) || [],
+                currentProduct: null,
+                sale: { productId: '', quantity: 0 }
+            },
+            methods: {
+                addProduct() {
+                    const newProduct = { ...this.newProduct, id: Date.now() };
+                    this.products.push(newProduct);
+                    this.saveProducts();
+                    this.newProduct = { name: '', price: 0, quantity: 0 };
+                    this.view = 'list';
+                },
+                editProduct(product) {
+                    this.currentProduct = { ...product };
+                    this.view = 'edit';
+                },
+                updateProduct() {
+                    const index = this.products.findIndex(p => p.id === this.currentProduct.id);
+                    if (index !== -1) {
+                        this.products.splice(index, 1, this.currentProduct);
+                    }
+                    this.saveProducts();
+                    this.currentProduct = null;
+                    this.view = 'list';
+                },
+                deleteProduct(id) {
+                    this.products = this.products.filter(p => p.id !== id);
+                    this.saveProducts();
+                },
+                registerSale() {
+                    const productId = parseInt(this.sale.productId);
+                    const product = this.products.find(p => p.id === productId);
+                    console.log('Product ID:', productId);
+                    console.log('Product found:', product);
+                    if (product && this.sale.quantity > 0 && product.quantity >= this.sale.quantity) {
+                        product.quantity -= this.sale.quantity;
+                        this.saveProducts();
+                        this.sale = { productId: '', quantity: 0 };
+                        this.view = 'list';
+                    } else {
+                        alert('Producto no encontrado o cantidad insuficiente');
+                    }
+                },
+                saveProducts() {
+                    localStorage.setItem('products', JSON.stringify(this.products));
+                }
+            }
+        });
+    </script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
